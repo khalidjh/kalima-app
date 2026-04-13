@@ -1,4 +1,4 @@
-package fun.kalima.kalima_temp
+package fun.kalima.app
 
 import io.flutter.embedding.android.FlutterActivity
 

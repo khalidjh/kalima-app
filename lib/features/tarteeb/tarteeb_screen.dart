@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart' as share_plus;
 import '../../core/theme.dart';
 import '../../core/tarteeb_data.dart';
 import '../../core/sounds.dart';
+import '../../core/storage.dart';
 
 class TarteebState {
   final List<TarteebPair> pairs;
@@ -58,7 +59,46 @@ class TarteebNotifier extends StateNotifier<TarteebState> {
 
   void _init() {
     final pairs = getDailyTarteebPairs();
-    state = TarteebState(pairs: pairs);
+    final puzzleNum = getTarteebPuzzleNumber();
+    final saved = GameStorage().loadTarteebState(puzzleNum);
+
+    if (saved != null && saved['puzzleNumber'] == puzzleNum) {
+      state = TarteebState(
+        pairs: pairs,
+        currentRound: saved['currentRound'] as int? ?? 0,
+        score: saved['score'] as int? ?? 0,
+        results: List<bool>.from(saved['results'] ?? []),
+        gameOver: saved['gameOver'] as bool? ?? false,
+      );
+    } else {
+      state = TarteebState(pairs: pairs);
+    }
+  }
+
+  void _saveState() {
+    final puzzleNum = getTarteebPuzzleNumber();
+    GameStorage().saveTarteebState(puzzleNum, {
+      'puzzleNumber': puzzleNum,
+      'currentRound': state.currentRound,
+      'score': state.score,
+      'results': state.results,
+      'gameOver': state.gameOver,
+    });
+  }
+
+  void _updateStats() {
+    final stats = GameStorage().loadTarteebStats();
+    stats['played'] = (stats['played'] as int) + 1;
+    stats['totalScore'] = (stats['totalScore'] as int) + state.score;
+    if (state.score == state.pairs.length) {
+      stats['currentStreak'] = (stats['currentStreak'] as int) + 1;
+      final maxStreak = stats['maxStreak'] as int;
+      final curStreak = stats['currentStreak'] as int;
+      if (curStreak > maxStreak) stats['maxStreak'] = curStreak;
+    } else {
+      stats['currentStreak'] = 0;
+    }
+    GameStorage().saveTarteebStats(stats);
   }
 
   void guess(bool guessedHigher) {
@@ -85,8 +125,11 @@ class TarteebNotifier extends StateNotifier<TarteebState> {
       final nextRound = state.currentRound + 1;
       if (nextRound >= state.pairs.length) {
         state = state.copyWith(gameOver: true, currentRound: nextRound, revealed: false);
+        _saveState();
+        _updateStats();
       } else {
         state = state.copyWith(currentRound: nextRound, revealed: false, lastCorrect: null);
+        _saveState();
       }
     });
   }

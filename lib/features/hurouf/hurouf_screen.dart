@@ -197,6 +197,7 @@ class HuroufNotifier extends StateNotifier<HuroufState> {
       stats['currentStreak'] = 0;
     }
     GameStorage().saveHuroufStats(stats);
+    GameStorage().markGameCompleted('hurouf', getPuzzleNumber());
   }
 
   void showResultDialog() => state = state.copyWith(showResult: true);

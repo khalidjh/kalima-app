@@ -179,9 +179,11 @@ class _WaffleScreenState extends State<WaffleScreen> with TickerProviderStateMix
           gameStatus = 'won';
           SoundManager().correct();
           HapticFeedback.heavyImpact();
+          GameStorage().markGameCompleted('waffle', getWafflePuzzleNumber());
         } else if (swaps >= maxSwaps) {
           gameStatus = 'lost';
           HapticFeedback.heavyImpact();
+          GameStorage().markGameCompleted('waffle', getWafflePuzzleNumber());
         } else {
           SoundManager().tap();
           HapticFeedback.mediumImpact();

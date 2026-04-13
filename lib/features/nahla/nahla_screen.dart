@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart' as share_plus;
 import '../../core/theme.dart';
 import '../../core/nahla_data.dart';
 import '../../core/sounds.dart';
+import '../../core/storage.dart';
 
 class NahlaState {
   final NahlaPuzzle puzzle;
@@ -52,11 +53,33 @@ class NahlaNotifier extends StateNotifier<NahlaState> {
 
   void _init() {
     final puzzle = getDailyNahlaPuzzle();
-    final others = puzzle.letters.where((l) => l != puzzle.requiredLetter).toList()..shuffle(Random(getNahlaPuzzleNumber()));
-    state = NahlaState(
-      puzzle: puzzle,
-      shuffledLetters: others,
-    );
+    final puzzleNum = getNahlaPuzzleNumber();
+    final saved = GameStorage().loadNahlaState(puzzleNum);
+
+    if (saved != null && saved['puzzleNumber'] == puzzleNum) {
+      final others = puzzle.letters.where((l) => l != puzzle.requiredLetter).toList()..shuffle(Random(puzzleNum));
+      state = NahlaState(
+        puzzle: puzzle,
+        foundWords: List<String>.from(saved['foundWords'] ?? []),
+        score: saved['score'] as int? ?? 0,
+        shuffledLetters: others,
+      );
+    } else {
+      final others = puzzle.letters.where((l) => l != puzzle.requiredLetter).toList()..shuffle(Random(puzzleNum));
+      state = NahlaState(
+        puzzle: puzzle,
+        shuffledLetters: others,
+      );
+    }
+  }
+
+  void _saveState() {
+    final puzzleNum = getNahlaPuzzleNumber();
+    GameStorage().saveNahlaState(puzzleNum, {
+      'puzzleNumber': puzzleNum,
+      'foundWords': state.foundWords,
+      'score': state.score,
+    });
   }
 
   void addLetter(String letter) {
@@ -110,6 +133,7 @@ class NahlaNotifier extends StateNotifier<NahlaState> {
       currentInput: '',
       message: isPan ? '\u0628\u0627\u0646\u062c\u0631\u0627\u0645! +${wordScore}' : '+$wordScore',
     );
+    _saveState();
   }
 
   void shuffleLetters() {

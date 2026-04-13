@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme.dart';
 import '../../core/kharbasha_data.dart';
 import '../../core/sounds.dart';
+import '../../core/storage.dart';
 
 class KharbashaState {
   final KharbashaPuzzle puzzle;
@@ -58,10 +59,48 @@ class KharbashaNotifier extends StateNotifier<KharbashaState> {
 
   void _init() {
     final puzzle = getDailyKharbashaPuzzle();
-    state = KharbashaState(
-      puzzle: puzzle,
-      availableLetters: puzzle.scrambled.split(''),
-    );
+    final puzzleNum = getKharbashaPuzzleNumber();
+    final saved = GameStorage().loadKharbashaState(puzzleNum);
+
+    if (saved != null && saved['puzzleNumber'] == puzzleNum) {
+      state = KharbashaState(
+        puzzle: puzzle,
+        attemptsLeft: saved['attemptsLeft'] as int? ?? 5,
+        won: saved['won'] as bool? ?? false,
+        lost: saved['lost'] as bool? ?? false,
+        availableLetters: puzzle.scrambled.split(''),
+      );
+    } else {
+      state = KharbashaState(
+        puzzle: puzzle,
+        availableLetters: puzzle.scrambled.split(''),
+      );
+    }
+  }
+
+  void _saveState() {
+    final puzzleNum = getKharbashaPuzzleNumber();
+    GameStorage().saveKharbashaState(puzzleNum, {
+      'puzzleNumber': puzzleNum,
+      'attemptsLeft': state.attemptsLeft,
+      'won': state.won,
+      'lost': state.lost,
+    });
+  }
+
+  void _updateStats(bool won) {
+    final stats = GameStorage().loadKharbashaStats();
+    stats['played'] = (stats['played'] as int) + 1;
+    if (won) {
+      stats['won'] = (stats['won'] as int) + 1;
+      stats['currentStreak'] = (stats['currentStreak'] as int) + 1;
+      final maxStreak = stats['maxStreak'] as int;
+      final curStreak = stats['currentStreak'] as int;
+      if (curStreak > maxStreak) stats['maxStreak'] = curStreak;
+    } else {
+      stats['currentStreak'] = 0;
+    }
+    GameStorage().saveKharbashaStats(stats);
   }
 
   void tapLetter(int index) {
@@ -119,6 +158,8 @@ class KharbashaNotifier extends StateNotifier<KharbashaState> {
     if (state.currentGuess == state.puzzle.word) {
       SoundManager().win();
       state = state.copyWith(won: true);
+      _saveState();
+      _updateStats(true);
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) state = state.copyWith(showResult: true);
       });
@@ -132,7 +173,9 @@ class KharbashaNotifier extends StateNotifier<KharbashaState> {
         availableLetters: state.puzzle.scrambled.split(''),
         lost: newAttempts == 0,
       );
+      _saveState();
       if (newAttempts == 0) {
+        _updateStats(false);
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) state = state.copyWith(showResult: true);
         });

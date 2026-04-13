@@ -89,6 +89,19 @@ class GameStorage {
     return getJson(_nahlaKey(puzzleNum));
   }
 
+  Future<void> saveNahlaStats(Map<String, dynamic> stats) async {
+    await setJson('nahla_stats', stats);
+  }
+
+  Map<String, dynamic> loadNahlaStats() {
+    return getJson('nahla_stats') ?? {
+      'played': 0,
+      'maxScore': 0,
+      'currentStreak': 0,
+      'maxStreak': 0,
+    };
+  }
+
   // ---- Kharbasha (Scramble) ----
 
   String _kharbashaKey(int puzzleNum) => 'kharbasha_$puzzleNum';
@@ -101,6 +114,19 @@ class GameStorage {
     return getJson(_kharbashaKey(puzzleNum));
   }
 
+  Future<void> saveKharbashaStats(Map<String, dynamic> stats) async {
+    await setJson('kharbasha_stats', stats);
+  }
+
+  Map<String, dynamic> loadKharbashaStats() {
+    return getJson('kharbasha_stats') ?? {
+      'played': 0,
+      'won': 0,
+      'currentStreak': 0,
+      'maxStreak': 0,
+    };
+  }
+
   // ---- Tarteeb (Higher/Lower) ----
 
   String _tarteebKey(int puzzleNum) => 'tarteeb_$puzzleNum';
@@ -111,6 +137,29 @@ class GameStorage {
 
   Map<String, dynamic>? loadTarteebState(int puzzleNum) {
     return getJson(_tarteebKey(puzzleNum));
+  }
+
+  Future<void> saveTarteebStats(Map<String, dynamic> stats) async {
+    await setJson('tarteeb_stats', stats);
+  }
+
+  Map<String, dynamic> loadTarteebStats() {
+    return getJson('tarteeb_stats') ?? {
+      'played': 0,
+      'totalScore': 0,
+      'currentStreak': 0,
+      'maxStreak': 0,
+    };
+  }
+
+  // ---- Game Completion Tracking ----
+
+  Future<void> markGameCompleted(String game, int puzzleNum) async {
+    await prefs.setInt('completed_${game}_puzzle', puzzleNum);
+  }
+
+  bool isGameCompleted(String game, int puzzleNum) {
+    return prefs.getInt('completed_${game}_puzzle') == puzzleNum;
   }
 
   // ---- Settings ----

@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import '../../core/rawabet_data.dart';
 import '../../core/words.dart';
 import '../../core/sounds.dart';
+import '../../core/storage.dart';
 
 class RawabetState {
   final RawabetPuzzle puzzle;
@@ -74,9 +75,55 @@ class RawabetNotifier extends StateNotifier<RawabetState> {
 
   void _init() {
     final puzzle = getDailyRawabetPuzzle();
-    final allWords = puzzle.allWords;
-    allWords.shuffle(Random(getPuzzleNumber()));
-    state = RawabetState(puzzle: puzzle, gridWords: allWords);
+    final puzzleNum = getPuzzleNumber();
+    final saved = GameStorage().loadRawabetState(puzzleNum);
+
+    if (saved != null && saved['puzzleNumber'] == puzzleNum) {
+      final solvedNames = List<String>.from(saved['solvedGroups'] ?? []);
+      final solvedGroups = puzzle.categories
+          .where((c) => solvedNames.contains(c.name))
+          .toList();
+      final gridWords = List<String>.from(saved['gridWords'] ?? []);
+      state = RawabetState(
+        puzzle: puzzle,
+        gridWords: gridWords,
+        solvedGroups: solvedGroups,
+        mistakesLeft: saved['mistakesLeft'] as int? ?? 4,
+        won: saved['won'] as bool? ?? false,
+        lost: saved['lost'] as bool? ?? false,
+      );
+    } else {
+      final allWords = puzzle.allWords;
+      allWords.shuffle(Random(puzzleNum));
+      state = RawabetState(puzzle: puzzle, gridWords: allWords);
+    }
+  }
+
+  void _saveState() {
+    final puzzleNum = getPuzzleNumber();
+    GameStorage().saveRawabetState(puzzleNum, {
+      'puzzleNumber': puzzleNum,
+      'gridWords': state.gridWords,
+      'solvedGroups': state.solvedGroups.map((g) => g.name).toList(),
+      'mistakesLeft': state.mistakesLeft,
+      'won': state.won,
+      'lost': state.lost,
+    });
+  }
+
+  void _updateStats(bool won) {
+    final stats = GameStorage().loadRawabetStats();
+    stats['played'] = (stats['played'] as int) + 1;
+    if (won) {
+      stats['won'] = (stats['won'] as int) + 1;
+      stats['currentStreak'] = (stats['currentStreak'] as int) + 1;
+      final maxStreak = stats['maxStreak'] as int;
+      final curStreak = stats['currentStreak'] as int;
+      if (curStreak > maxStreak) stats['maxStreak'] = curStreak;
+    } else {
+      stats['currentStreak'] = 0;
+    }
+    GameStorage().saveRawabetStats(stats);
   }
 
   void toggleWord(String word) {
@@ -113,7 +160,9 @@ class RawabetNotifier extends StateNotifier<RawabetState> {
         selectedWords: {},
         won: newWon,
       );
+      _saveState();
       if (newWon) {
+        _updateStats(true);
         Future.delayed(const Duration(milliseconds: 1200), () {
           if (mounted) state = state.copyWith(showResult: true);
         });
@@ -126,7 +175,9 @@ class RawabetNotifier extends StateNotifier<RawabetState> {
         shakeSelection: true,
         lost: newMistakes == 0,
       );
+      _saveState();
       if (newMistakes == 0) {
+        _updateStats(false);
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) state = state.copyWith(showResult: true);
         });

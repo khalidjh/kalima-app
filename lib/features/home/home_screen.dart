@@ -79,6 +79,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 32),
                 // Game cards
                 _GameCard(
+                  title: '\u0648\u0627\u0641\u0644',
+                  subtitle: '\u0628\u062f\u0651\u0644 \u0627\u0644\u062d\u0631\u0648\u0641 \u0644\u062a\u0643\u0648\u064a\u0646 \u0666 \u0643\u0644\u0645\u0627\u062a',
+                  icon: Icons.grid_4x4_rounded,
+                  color1: const Color(0xFF10B981),
+                  color2: const Color(0xFF059669),
+                  onTap: () => _go(context, '/waffle'),
+                  badge: '\u062c\u062f\u064a\u062f',
+                )
+                    .animate()
+                    .fadeIn(delay: 80.ms, duration: 500.ms)
+                    .slideY(begin: 0.15, end: 0),
+                const SizedBox(height: 14),
+                _GameCard(
                   title: '\u062d\u0631\u0648\u0641',
                   subtitle: '\u062e\u0645\u0651\u0646 \u0627\u0644\u0643\u0644\u0645\u0629 \u0641\u064a \u0666 \u0645\u062d\u0627\u0648\u0644\u0627\u062a',
                   icon: Icons.grid_on_rounded,
@@ -184,6 +197,7 @@ class _GameCard extends StatefulWidget {
   final Color color1;
   final Color color2;
   final VoidCallback onTap;
+  final String? badge;
 
   const _GameCard({
     required this.title,
@@ -192,6 +206,7 @@ class _GameCard extends StatefulWidget {
     required this.color1,
     required this.color2,
     required this.onTap,
+    this.badge,
   });
 
   @override
@@ -232,19 +247,46 @@ class _GameCardState extends State<_GameCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          widget.title,
-                          style: KalimaTheme.cairoW900.copyWith(
-                            fontSize: 28,
-                            color: KalimaColors.white,
-                            shadows: const [
-                              Shadow(
-                                color: Color(0x44000000),
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
+                        Row(
+                          children: [
+                            Text(
+                              widget.title,
+                              style: KalimaTheme.cairoW900.copyWith(
+                                fontSize: 28,
+                                color: KalimaColors.white,
+                                shadows: const [
+                                  Shadow(
+                                    color: Color(0x44000000),
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (widget.badge != null) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: KalimaColors.accent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: KalimaColors.accent.withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  widget.badge!,
+                                  style: KalimaTheme.cairoW800.copyWith(
+                                    fontSize: 10,
+                                    color: const Color(0xFF0F0C00),
+                                  ),
+                                ),
                               ),
                             ],
-                          ),
+                          ],
                         ),
                         Text(
                           widget.subtitle,

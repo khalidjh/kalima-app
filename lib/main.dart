@@ -13,6 +13,7 @@ import 'features/nahla/nahla_screen.dart';
 import 'features/kharbasha/kharbasha_screen.dart';
 import 'features/tarteeb/tarteeb_screen.dart';
 import 'features/stats/stats_screen.dart';
+import 'features/waffle/waffle_screen.dart';
 import 'features/settings/settings_screen.dart';
 
 void main() async {
@@ -34,6 +35,7 @@ void main() async {
 final _router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/waffle', builder: (context, state) => const WaffleScreen()),
     GoRoute(path: '/hurouf', builder: (context, state) => const HuroufScreen()),
     GoRoute(path: '/rawabet', builder: (context, state) => const RawabetScreen()),
     GoRoute(path: '/nahla', builder: (context, state) => const NahlaScreen()),
